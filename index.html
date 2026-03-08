@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RAG Simulator</title>
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+background:#0f172a;
+color:white;
+margin:0;
+padding:40px;
+}
+
+h1{
+text-align:center;
+margin-bottom:30px;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+}
+
+.section{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+}
+
+button{
+background:#3b82f6;
+border:none;
+padding:10px 18px;
+border-radius:8px;
+color:white;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#2563eb;
+}
+
+textarea{
+width:100%;
+height:120px;
+border-radius:8px;
+border:none;
+padding:10px;
+}
+
+input{
+width:100%;
+padding:10px;
+border-radius:8px;
+border:none;
+margin-top:10px;
+}
+
+.box{
+background:#334155;
+padding:10px;
+border-radius:6px;
+margin:6px 0;
+}
+
+.step{
+margin-top:15px;
+}
+
+.highlight{
+background:#16a34a;
+padding:6px;
+border-radius:6px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>RAG Simulator</h1>
+
+<div class="section">
+<h2>1️⃣ Knowledge Base</h2>
+
+<textarea id="knowledge">
+RAG stands for Retrieval Augmented Generation.
+It helps large language models use external knowledge.
+Embeddings convert text into vectors.
+Vector databases store embeddings for similarity search.
+</textarea>
+
+<button onclick="chunkText()">Create Chunks</button>
+
+<div id="chunks"></div>
+</div>
+
+
+<div class="section">
+<h2>2️⃣ Create Embeddings</h2>
+
+<button onclick="createEmbeddings()">Generate Fake Embeddings</button>
+
+<div id="embeddings"></div>
+</div>
+
+
+<div class="section">
+<h2>3️⃣ User Query</h2>
+
+<input id="query" placeholder="Ask something...">
+
+<button onclick="search()">Search Vector DB</button>
+
+<div id="results"></div>
+</div>
+
+
+<div class="section">
+<h2>4️⃣ Retrieved Context</h2>
+
+<div id="context"></div>
+</div>
+
+
+<div class="section">
+<h2>5️⃣ Final LLM Answer</h2>
+
+<div id="answer"></div>
+</div>
+
+</div>
+
+<script>
+
+let chunks=[]
+let vectors=[]
+
+function chunkText(){
+
+let text=document.getElementById("knowledge").value
+
+chunks=text.split(".").filter(x=>x.trim().length>0)
+
+let html=""
+
+chunks.forEach((c,i)=>{
+
+html+=`<div class="box">Chunk ${i+1}: ${c}</div>`
+
+})
+
+document.getElementById("chunks").innerHTML=html
+
+}
+
+
+function randomVector(){
+
+let arr=[]
+
+for(let i=0;i<5;i++){
+
+arr.push(Math.random().toFixed(2))
+
+}
+
+return arr
+
+}
+
+
+function createEmbeddings(){
+
+vectors=chunks.map(c=>({
+
+text:c,
+
+vector:randomVector()
+
+}))
+
+let html=""
+
+vectors.forEach(v=>{
+
+html+=`<div class="box">${v.text}<br>Vector: [${v.vector}]</div>`
+
+})
+
+document.getElementById("embeddings").innerHTML=html
+
+}
+
+
+function similarity(a,b){
+
+let score=0
+
+for(let i=0;i<a.length;i++){
+
+score+=Math.abs(a[i]-b[i])
+
+}
+
+return score
+
+}
+
+
+function search(){
+
+let query=document.getElementById("query").value
+
+let queryVector=randomVector()
+
+let scored=vectors.map(v=>({
+
+text:v.text,
+
+score:similarity(queryVector,v.vector)
+
+}))
+
+scored.sort((a,b)=>a.score-b.score)
+
+let top=scored.slice(0,2)
+
+let html=""
+
+top.forEach(r=>{
+
+html+=`<div class="box highlight">${r.text}</div>`
+
+})
+
+document.getElementById("results").innerHTML=html
+
+document.getElementById("context").innerHTML=html
+
+generateAnswer(query,top)
+
+}
+
+
+function generateAnswer(query,context){
+
+let ctx=context.map(x=>x.text).join(". ")
+
+let answer=`Based on retrieved context: ${ctx}. 
+Answer to "${query}" is generated using this context.`
+
+document.getElementById("answer").innerHTML=
+`<div class="box">${answer}</div>`
+
+}
+
+</script>
+
+</body>
+</html>
